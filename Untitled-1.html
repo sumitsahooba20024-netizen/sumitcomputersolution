@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Salary Management System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body{
+font-family:Arial;
+background:linear-gradient(to right,#00c6ff,#0072ff);
+margin:0;
+}
+.container{
+background:#fff;
+width:98%;
+margin:10px auto;
+padding:15px;
+border-radius:10px;
+}
+/* Login card styles */
+.login-card{
+	display:flex;
+	max-width:900px;
+	margin:24px auto;
+	border-radius:10px;
+	overflow:hidden;
+	box-shadow:0 8px 24px rgba(0,0,0,0.12);
+}
+.login-card .left-panel{
+	background:linear-gradient(180deg,#0ea5e9,#0369a1);
+	color:rgba(255,255,255,0.95);
+	padding:48px;
+	width:52%;
+}
+.login-card .left-panel h1{font-size:36px;margin:10px 0 6px}
+.login-card .left-panel p{opacity:0.9;line-height:1.4}
+.login-card .right-panel{
+	background:#fff;
+	padding:40px;
+	width:48%;
+	display:flex;
+	flex-direction:column;
+	justify-content:center;
+}
+.form-input{margin-bottom:14px}
+.form-input input{width:100%;padding:12px;border-radius:8px;border:1px solid #e6eefc;background:#f7fbff}
+.subscribe-btn{background:#0b74ff;color:#fff;padding:12px;border-radius:24px;border:none;width:100%;cursor:pointer;font-weight:600}
+
+@media (max-width:800px){
+	.login-card{flex-direction:column;width:92%}
+	.login-card .left-panel,.login-card .right-panel{width:100%;padding:28px}
+}
+input,select{
+width:100%;
+padding:6px;
+margin:3px 0;
+border-radius:5px;
+border:1px solid #aaa;
+background:#f2f7ff;
+}
+button{
+padding:6px 10px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+margin:2px;
+}
+.save{background:#4caf50;color:white;}
+.edit{background:#ff9800;color:white;}
+.delete{background:#f44336;color:white;}
+.slip{background:#3f51b5;color:white;}
+.back{background:#2196f3;color:white;}
+
+.hidden{display:none;}
+
+.table-scroll{
+overflow-x:auto;
+white-space:nowrap;
+border:2px solid #4caf50;
+margin-top:10px;
+}
+table{
+border-collapse:collapse;
+min-width:2000px;
+}
+th,td{
+border:1px solid #888;
+padding:5px;
+text-align:center;
+}
+th{
+background:#8bc34a;
+color:white;
+position:sticky;
+top:0;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginBox">
+	<div class="login-card">
+		<div class="left-panel">
+			<div style="max-width:360px">
+				<small style="opacity:0.9">COMPANY NAME</small>
+				<h1>WELCOME BACK</h1>
+				<p>Nice to see you again. Sign in to manage employee salary records, create slips, and view payroll history.</p>
+			</div>
+		</div>
+		<div class="right-panel">
+			<h3 style="margin:0 0 18px 0;">Login Account</h3>
+			<div class="form-input"><input id="uid" placeholder="Email ID or User ID" autocomplete="username"></div>
+			<div class="form-input"><input id="pwd" type="password" placeholder="Password" autocomplete="current-password"></div>
+			<label style="display:flex;align-items:center;margin-bottom:12px"><input id="showPwd" type="checkbox" style="margin-right:8px" onclick="document.getElementById('pwd').type=this.checked?'text':'password'"> Keep me signed in</label>
+			<button class="subscribe-btn" onclick="loginUser()">SUBSCRIBE</button>
+		</div>
+	</div>
+</div>
+
+<!-- ENTRY FORM -->
+<div class="container hidden" id="entry">
+	<div class="entry-card" style="max-width:1100px;margin:18px auto;box-shadow:0 10px 30px rgba(0,0,0,0.08);border-radius:10px;overflow:hidden;display:flex;">
+		<div class="entry-left" style="background:linear-gradient(180deg,#f3fbff,#eaf6ff);width:38%;padding:28px;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+			<img id="entryImg" src="" alt="decor" style="width:90%;height:220px;object-fit:cover;border-radius:8px;opacity:0.98;filter:grayscale(5%);">
+			<div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+				<button onclick="chooseImage()" style="background:#fff;border:1px solid #d6e9fb;padding:8px 10px;border-radius:8px;cursor:pointer">Change Image</button>
+				<small style="color:#3b556b;opacity:0.9">Recommended: 1200x900</small>
+			</div>
+			<input id="imgInput" type="file" accept="image/*" class="hidden" onchange="onImageSelected(event)">
+			<h2 style="color:#0b69a3;margin-top:12px">SUMIT COMPUTER SOLUTIONS</h2>
+			<p style="color:#3b556b;text-align:center;line-height:1.4;margin-top:6px">Quickly add or edit employee payroll records. Fields include wages, deductions and net pay.</p>
+		</div>
+		<div class="entry-right" style="padding:22px;background:#fff;flex:1">
+			<h3 style="margin:0 0 12px 0;color:#1f3b5a">Employee Salary Data</h3>
+			<div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+				<div class="field">
+					<label>Salary Month</label>
+					<div class="input-wrap"><span class="icon">📅</span><input type="month" id="month"></div>
+				</div>
+				<div class="field">
+					<label>EMP ID</label>
+					<div class="input-wrap"><span class="icon">🆔</span><input id="empId" readonly placeholder="Auto-generated"></div>
+				</div>
+
+				<div class="field" style="grid-column:1 / -1">
+					<label>Gatepass No</label>
+					<div class="input-wrap"><span class="icon">🔖</span><input id="gatepass" placeholder="Gatepass No"></div>
+				</div>
+
+				<div class="field">
+					<label>Name</label>
+					<div class="input-wrap"><span class="icon">👤</span><input id="name" placeholder="Full name"></div>
+				</div>
+				<div class="field">
+					<label>Father Name</label>
+					<div class="input-wrap"><span class="icon">👨</span><input id="father" placeholder="Father's name"></div>
+				</div>
+
+				<div class="field">
+					<label>Aadhaar No</label>
+					<div class="input-wrap"><span class="icon">🪪</span><input id="aadhaar" placeholder="Aadhaar No"></div>
+				</div>
+				<div class="field">
+					<label>Date of Birth</label>
+					<div class="input-wrap"><span class="icon">🎂</span><input type="date" id="dob"></div>
+				</div>
+
+				<div class="field">
+					<label>Gate Pass Exp Date</label>
+					<div class="input-wrap"><span class="icon">⌛</span><input type="date" id="exp"></div>
+				</div>
+				<div class="field">
+					<label>Designation</label>
+					<div class="input-wrap"><span class="icon">💼</span><input id="desig" placeholder="Designation"></div>
+				</div>
+
+				<div class="field">
+					<label>Total Present</label>
+					<div class="input-wrap"><span class="icon">✅</span><input type="number" id="present" placeholder="Days present" oninput="calc()"></div>
+				</div>
+				<div class="field">
+					<label>Total OT</label>
+					<div class="input-wrap"><span class="icon">⏱️</span><input type="number" id="ot" placeholder="OT hours" oninput="calc()"></div>
+				</div>
+
+				<div class="field">
+					<label>Total Work Days</label>
+					<div class="input-wrap"><span class="icon">📊</span><input id="work" readonly placeholder="Calculated"></div>
+				</div>
+				<div class="field">
+					<label>Minimum Wage</label>
+					<div class="input-wrap"><span class="icon">₹</span><input type="number" id="minwage" placeholder="Minimum Wage" oninput="calc()"></div>
+				</div>
+
+				<div class="field">
+					<label>Total Wages</label>
+					<div class="input-wrap"><span class="icon">💰</span><input id="wages" readonly></div>
+				</div>
+				<div class="field">
+					<label>PF</label>
+					<div class="input-wrap"><span class="icon">🛡️</span><input id="pf" readonly></div>
+				</div>
+
+				<div class="field">
+					<label>ESI</label>
+					<div class="input-wrap"><span class="icon">🏥</span><input id="esi" readonly></div>
+				</div>
+				<div class="field">
+					<label>Advance</label>
+					<div class="input-wrap"><span class="icon">📤</span><input type="number" id="advance" placeholder="Advance" oninput="calc()"></div>
+				</div>
+
+				<div class="field">
+					<label>Other</label>
+					<div class="input-wrap"><span class="icon">➕</span><input type="number" id="other" placeholder="Other" ></div>
+				</div>
+				<div class="field">
+					<label>Total Deduction</label>
+					<div class="input-wrap"><span class="icon">➖</span><input id="ded" readonly></div>
+				</div>
+
+				<div class="field" style="grid-column:1 / -1;display:flex;flex-direction:column">
+					<label>Net Payment</label>
+					<div class="input-wrap" style="width:40%"><span class="icon">🏁</span><input id="net" readonly></div>
+				</div>
+			</div>
+
+			<div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+				<button class="save" onclick="save()" style="background:#0b74ff;color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer">Save</button>
+				<button onclick="showDash()" style="background:#eef2f8;border:none;padding:8px 12px;border-radius:8px;cursor:pointer">Dashboard</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="toast" style="position:fixed;right:20px;bottom:20px;background:#0b74ff;color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 6px 18px rgba(11,116,255,0.18);opacity:0;transition:opacity .25s;pointer-events:none">Saved</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="container hidden" id="dash" style="background:transparent;box-shadow:none;padding:0;max-width:100vw;">
+	<div style="display:flex;min-height:90vh">
+		<!-- Sidebar -->
+		<div style="background:linear-gradient(180deg,#7f53ff,#647dee);width:220px;padding:32px 0 0 0;display:flex;flex-direction:column;align-items:center;border-radius:24px 0 0 24px;box-shadow:2px 0 16px #0001">
+			<div style="color:#fff;font-size:22px;font-weight:700;letter-spacing:1px;margin-bottom:32px;display:flex;align-items:center;gap:8px"><span style="font-size:28px">💼</span> COMPANY</div>
+			<div style="width:100%">
+				<div style="color:#fff;opacity:0.9;padding:12px 32px 12px 32px;background:rgba(255,255,255,0.08);border-radius:0 24px 24px 0;font-weight:600;">Dashboard</div>
+				<div style="color:#fff;opacity:0.7;padding:12px 32px 12px 32px;">Earnings</div>
+				<div style="color:#fff;opacity:0.7;padding:12px 32px 12px 32px;">Report</div>
+				<div style="color:#fff;opacity:0.7;padding:12px 32px 12px 32px;">Event</div>
+				<div style="color:#fff;opacity:0.7;padding:12px 32px 12px 32px;">Calendar</div>
+				<div style="color:#fff;opacity:0.7;padding:12px 32px 12px 32px;">Setting</div>
+				<div style="color:#fff;opacity:0.7;padding:12px 32px 12px 32px;">Account</div>
+			</div>
+		</div>
+		<!-- Main dashboard -->
+		<div style="flex:1;padding:32px 32px 0 32px;background:#f7f8fa;min-height:100vh">
+			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+				<h2 style="margin:0;font-size:28px;font-weight:700;color:#3a3a5a">Dashboard</h2>
+				<button class="back" onclick="backToEntry()" style="background:#fff;color:#7f53ff;border:1px solid #d6d6f6;padding:8px 18px;border-radius:8px;font-weight:600;">⬅ Data Entry</button>
+			</div>
+			<!-- Date filter -->
+			<div style="display:flex;gap:18px;align-items:center;margin-bottom:18px">
+				<div style="display:flex;flex-direction:column">
+					<label style="font-size:13px;color:#888">From Date</label>
+					<input type="date" id="fromDate" style="padding:7px 12px;border-radius:8px;border:1px solid #d6d6f6;background:#fff">
+				</div>
+				<div style="display:flex;flex-direction:column">
+					<label style="font-size:13px;color:#888">To Date</label>
+					<input type="date" id="toDate" style="padding:7px 12px;border-radius:8px;border:1px solid #d6d6f6;background:#fff">
+				</div>
+				<button onclick="load()" style="background:#7f53ff;color:#fff;padding:8px 18px;border-radius:8px;border:none;font-weight:600;margin-top:18px">Apply Filter</button>
+				<button onclick="exportToExcel()" style="background:#fff;color:#7f53ff;padding:8px 18px;border-radius:8px;border:1px solid #d6d6f6;font-weight:600;margin-top:18px">Export Excel</button>
+				<input id="search" placeholder="Search Name" onkeyup="load()" style="margin-left:8px;padding:7px 12px;border-radius:8px;border:1px solid #d6d6f6;background:#fff;width:180px"/>
+			</div>
+			<!-- Summary cards -->
+			<div id="summaryCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:28px">
+				<!-- Cards will be filled by JS -->
+			</div>
+			<!-- Table -->
+			<div class="table-scroll" style="background:#fff;border-radius:18px;box-shadow:0 2px 12px #0001;padding:12px 0">
+				<table>
+				<thead>
+				<tr>
+				<th>EMP ID</th><th>Salary Month</th><th>Gatepass</th><th>Name</th>
+				<th>Father</th><th>Aadhaar</th><th>DOB</th><th>Exp Date</th>
+				<th>Designation</th><th>Present</th><th>OT</th><th>Work Days</th>
+				<th>Min Wage</th><th>Total Wages</th><th>PF</th><th>ESI</th>
+				<th>Advance</th><th>Other</th><th>Total Ded</th><th>Net Pay</th><th>Action</th>
+				</tr>
+				</thead>
+				<tbody id="tbody"></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+let editIndex=null;
+let count=localStorage.getItem("count")||0;
+
+function loginUser(){
+	const uidVal = document.getElementById('uid')?.value || '';
+	const pwdVal = document.getElementById('pwd')?.value || '';
+	if(uidVal === "SUMIT01" && pwdVal === "Sumit@123"){
+		document.getElementById('loginBox').classList.add("hidden");
+		document.getElementById('entry').classList.remove("hidden");
+		genId();
+	} else alert("Invalid Login");
+}
+
+function genId(){
+count++;
+localStorage.setItem("count",count);
+empId.value="EMP"+count.toString().padStart(2,"0");
+}
+
+function calc(){
+let p=+present.value||0,o=+ot.value||0;
+work.value=p+o;
+let mw=+minwage.value||0;
+let w=Math.round((mw/26)*p);
+wages.value=w;
+pf.value=w>15000?1800:Math.round(w*0.12);
+esi.value=Math.round(w*0.0075);
+let d=+pf.value+ +esi.value+(+advance.value||0)+(+other.value||0);
+ded.value=d;
+net.value=w-d;
+}
+
+function save(){
+let data=JSON.parse(localStorage.getItem("data")||"[]");
+let obj={
+empId:empId.value,month:month.value,gatepass:gatepass.value,
+name:document.getElementById('name').value,father:father.value,aadhaar:aadhaar.value,
+dob:dob.value,exp:exp.value,desig:desig.value,
+present:present.value,ot:ot.value,work:work.value,
+minwage:minwage.value,wages:wages.value,pf:pf.value,esi:esi.value,
+advance:advance.value,other:other.value,ded:ded.value,net:net.value
+};
+if(editIndex!==null){data[editIndex]=obj;editIndex=null;}
+else data.push(obj);
+localStorage.setItem("data",JSON.stringify(data));
+	localStorage.setItem("data",JSON.stringify(data));
+	showToast('Record saved');
+	// clear form fields after saving so next entry is fresh
+	clearForm();
+	entry.classList.add("hidden");
+	dash.classList.remove("hidden");
+	load();
+}
+
+function showToast(msg){
+	const t = document.getElementById('toast');
+	if(!t) return;
+	t.textContent = msg;
+	t.style.opacity = '1';
+	setTimeout(()=>{ t.style.opacity='0'; }, 3000);
+}
+
+function showDash(){entry.classList.add("hidden");dash.classList.remove("hidden");load();}
+function backToEntry(){dash.classList.add("hidden");entry.classList.remove("hidden");}
+
+function load(){
+	let tb = tbody; tb.innerHTML = "";
+	let data = JSON.parse(localStorage.getItem("data") || "[]");
+	// Date filter
+	const fromDate = document.getElementById('fromDate')?.value;
+	const toDate = document.getElementById('toDate')?.value;
+	// Search filter
+	const searchVal = document.getElementById('search')?.value?.toLowerCase() || '';
+	// Filtered data
+	let filtered = data.filter(d => {
+		// Date filter: use d.month (YYYY-MM)
+		let pass = true;
+		if (fromDate) {
+			pass = pass && d.month && (d.month + '-01') >= fromDate;
+		}
+		if (toDate) {
+			pass = pass && d.month && (d.month + '-01') <= toDate;
+		}
+		if (searchVal) {
+			pass = pass && d.name && d.name.toLowerCase().includes(searchVal);
+		}
+		return pass;
+	});
+
+	// Summary cards
+	let netTotal = 0, pfTotal = 0, esiTotal = 0, advTotal = 0;
+	filtered.forEach(d => {
+		netTotal += Number(d.net) || 0;
+		pfTotal += Number(d.pf) || 0;
+		esiTotal += Number(d.esi) || 0;
+		advTotal += Number(d.advance) || 0;
+	});
+	const fmt = n => (Number(n)||0).toLocaleString('en-IN');
+	document.getElementById('summaryCards').innerHTML = `
+		<div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px #0001;padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:8px">
+			<div style="font-size:15px;color:#888">Total Net Salary</div>
+			<div style="font-size:28px;font-weight:700;color:#ff5e62">₹ ${fmt(netTotal)}</div>
+		</div>
+		<div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px #0001;padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:8px">
+			<div style="font-size:15px;color:#888">Total PF</div>
+			<div style="font-size:28px;font-weight:700;color:#7f53ff">₹ ${fmt(pfTotal)}</div>
+		</div>
+		<div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px #0001;padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:8px">
+			<div style="font-size:15px;color:#888">Total ESI</div>
+			<div style="font-size:28px;font-weight:700;color:#36b3a8">₹ ${fmt(esiTotal)}</div>
+		</div>
+		<div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px #0001;padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:8px">
+			<div style="font-size:15px;color:#888">Total Advance</div>
+			<div style="font-size:28px;font-weight:700;color:#fbbf24">₹ ${fmt(advTotal)}</div>
+		</div>
+	`;
+
+	// Table
+	filtered.forEach((d, i) => {
+		tb.innerHTML += `
+		<tr>
+		<td>${d.empId}</td><td>${d.month}</td><td>${d.gatepass}</td><td>${d.name}</td>
+		<td>${d.father}</td><td>${d.aadhaar}</td><td>${d.dob}</td><td>${d.exp}</td>
+		<td>${d.desig}</td><td>${d.present}</td><td>${d.ot}</td><td>${d.work}</td>
+		<td>${d.minwage}</td><td>${d.wages}</td><td>${d.pf}</td><td>${d.esi}</td>
+		<td>${d.advance}</td><td>${d.other}</td><td>${d.ded}</td><td>${d.net}</td>
+		<td>
+		<button class="edit" onclick="editRec(${i})">Edit</button>
+		<button class="delete" onclick="del(${i})">Del</button>
+		<button class="slip" onclick="slip(${i})">Slip</button>
+		</td>
+		</tr>`;
+	});
+}
+
+function editRec(i){
+let d=JSON.parse(localStorage.getItem("data"))[i];
+editIndex=i;
+dash.classList.add("hidden");
+entry.classList.remove("hidden");
+Object.keys(d).forEach(k=>{const el=document.getElementById(k); if(el) el.value=d[k];});
+}
+
+function del(i){
+if(confirm("Delete record?")){
+let d=JSON.parse(localStorage.getItem("data"));
+d.splice(i,1);
+localStorage.setItem("data",JSON.stringify(d));
+load();
+}
+}
+
+function slip(i){
+	const d = JSON.parse(localStorage.getItem("data") || "[]")[i];
+	if(!d) return alert('Record not found');
+	const fmt = n => (Number(n)||0).toLocaleString('en-IN');
+	const monthLabel = d.month ? new Date(d.month + '-01').toLocaleString('en-US',{month:'short',year:'numeric'}) : '';
+	const basic = Number(d.wages)||0;
+	const otWages = Number(d.ot)||0; // OT stored as hours — not converted; display raw hours in header and show OT wages if present
+	const other = Number(d.other)||0;
+	const pfAmt = Number(d.pf)||0;
+	const esiAmt = Number(d.esi)||0;
+	const adv = Number(d.advance)||0;
+	const dedTotal = Number(d.ded)||0;
+	const net = Number(d.net)||0;
+
+	const slipHTML = `
+	<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Salary Slip - ${d.empId || ''}</title>
+		<style>
+			body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:20px}
+			.card{max-width:900px;margin:0 auto;border:2px solid #333;padding:18px}
+			.hdr{text-align:center}
+			.company{font-weight:800;font-size:20px;letter-spacing:1px}
+			.title{font-size:16px;margin-top:6px}
+			.row{display:flex;justify-content:space-between;margin-top:14px}
+			.col{width:48%}
+			.small{color:#333;opacity:0.9}
+			.section{margin-top:16px}
+			table{width:100%;border-collapse:collapse;margin-top:8px}
+			th,td{border:1px solid #999;padding:8px;text-align:left}
+			th{background:#f2f2f2}
+			.total{font-weight:700}
+			.net{background:#f7f7f7;padding:12px;margin-top:12px;text-align:center;font-size:18px;font-weight:800}
+			.sigs{display:flex;justify-content:space-between;margin-top:28px}
+			.sig{width:45%;text-align:center}
+			@media print{ .card{border:none} }
+		</style>
+	</head>
+	<body>
+		<div class="card">
+			<div class="hdr">
+				<div class="company">SUMIT COMPUTER SOLUTIONS</div>
+				<div class="title">Salary Slip for the Month of ${monthLabel}</div>
+			</div>
+
+			<div class="row">
+				<div class="col">
+					<div><strong>👤 Name:</strong> ${escapeHtml(d.name||'')}</div>
+					<div style="margin-top:6px"><strong>👨 Father:</strong> ${escapeHtml(d.father||'')}</div>
+					<div style="margin-top:6px"><strong>📅 Present Days:</strong> ${escapeHtml(d.present||'')}</div>
+				</div>
+				<div class="col">
+					<div><strong>🆔 Emp ID:</strong> ${escapeHtml(d.empId||'')}</div>
+					<div style="margin-top:6px"><strong>💼 Designation:</strong> ${escapeHtml(d.desig||'')}</div>
+					<div style="margin-top:6px"><strong>⏱️ OT Hours:</strong> ${escapeHtml(d.ot||'')}</div>
+				</div>
+			</div>
+
+			<div class="section">
+				<strong>💰 Earnings & Deductions</strong>
+				<table>
+					<tr><th>EARNINGS</th><th>AMOUNT</th><th>DEDUCTIONS</th><th>AMOUNT</th></tr>
+					<tr><td>Basic Wages</td><td>₹ ${fmt(basic)}</td><td>PF (12%)</td><td>₹ ${fmt(pfAmt)}</td></tr>
+					<tr><td>OT Wages</td><td>₹ ${fmt(0)}</td><td>ESI (0.75%)</td><td>₹ ${fmt(esiAmt)}</td></tr>
+					<tr><td>Other</td><td>₹ ${fmt(other)}</td><td>Advance</td><td>₹ ${fmt(adv)}</td></tr>
+					<tr class="total"><td>TOTAL</td><td>₹ ${fmt(basic + other)}</td><td>TOTAL</td><td>₹ ${fmt(dedTotal)}</td></tr>
+				</table>
+			</div>
+
+			<div class="net">Net Payable ₹ ${fmt(net)}</div>
+
+			<div class="sigs">
+				<div class="sig">
+					<div>Employee Signature</div>
+					<div style="margin-top:28px">.............................</div>
+				</div>
+				<div class="sig">
+					<div>Authorized Sign</div>
+					<div style="margin-top:28px">.............................</div>
+				</div>
+			</div>
+		</div>
+		<script>function printPage(){ window.print(); }<\/script>
+	</body>
+	</html>`;
+
+	const w = window.open('','_blank','width=900,height=700');
+	w.document.write(slipHTML);
+	w.document.close();
+}
+
+function escapeHtml(str){
+	if(!str) return '';
+	return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Export dashboard data to Excel using SheetJS
+function exportToExcel(){
+	const data = JSON.parse(localStorage.getItem('data')||'[]');
+	if(!data || !data.length) return alert('No records to export');
+	const rows = data.map(d=>({
+		'EMP ID': d.empId||'', 'Salary Month': d.month||'', 'Gatepass': d.gatepass||'', 'Name': d.name||'',
+		'Father': d.father||'', 'Aadhaar': d.aadhaar||'', 'DOB': d.dob||'', 'Exp Date': d.exp||'', 'Designation': d.desig||'',
+		'Present': d.present||'', 'OT': d.ot||'', 'Work Days': d.work||'', 'Min Wage': d.minwage||'', 'Total Wages': d.wages||'',
+		'PF': d.pf||'', 'ESI': d.esi||'', 'Advance': d.advance||'', 'Other': d.other||'', 'Total Ded': d.ded||'', 'Net Pay': d.net||''
+	}));
+	const ws = XLSX.utils.json_to_sheet(rows);
+	const wb = XLSX.utils.book_new();
+	XLSX.utils.book_append_sheet(wb, ws, 'Salaries');
+	XLSX.writeFile(wb, 'salary_export.xlsx');
+}
+
+// Image upload for left panel: persists as data URL in localStorage
+function chooseImage(){
+	document.getElementById('imgInput').click();
+}
+
+function onImageSelected(e){
+	const f = e.target.files && e.target.files[0];
+	if(!f) return;
+	const reader = new FileReader();
+	reader.onload = function(ev){
+		const dataUrl = ev.target.result;
+		const img = document.getElementById('entryImg');
+		if(img) img.src = dataUrl;
+		try{ localStorage.setItem('entryLeftImage', dataUrl); }catch(err){ console.warn('Could not store image',err); }
+	}
+	reader.readAsDataURL(f);
+}
+
+// load stored image on startup
+(function(){
+	const dataUrl = localStorage.getItem('entryLeftImage');
+	if(dataUrl){ const img=document.getElementById('entryImg'); if(img) img.src=dataUrl; }
+})();
+
+function clearForm(){
+	const fields = ['month','empId','gatepass','name','father','aadhaar','dob','exp','desig','present','ot','work','minwage','wages','pf','esi','advance','other','ded','net'];
+	fields.forEach(id=>{ const el=document.getElementById(id); if(!el) return; if(el.type==='checkbox'){el.checked=false}else el.value=''; });
+}
+</script>
+</body>
+</html>
